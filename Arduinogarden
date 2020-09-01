@@ -1,0 +1,92 @@
+//written by yeahsmitty
+
+#include <LiquidCrystal_I2C.h>
+#include <Wire.h>
+#include <DHT.h>
+#define Type DHT11
+int tSensor = 2; //temp/humidity sensor digital Pin 2
+int rawH0;
+int rawH1;
+int rawH2;
+int percentage0;
+int percentage1;
+int percentage2;
+int fanPin = 10;
+int fanPWM;
+DHT HT(tSensor,Type);
+int humidity;
+int tempF;
+int setTime=1000;
+int mSensor0 = A1; //soil moisture sensor0 Pin A1
+int mSensor1 = A3; //soil moisture sensor1 Pin A3
+int pump1 = 12; //water pump1 pin 12
+
+
+LiquidCrystal_I2C lcd(0x27,16,2); // set the LCD address to 0x27 for a 16 chars and 2 line display
+
+
+
+void setup(){
+  lcd.init(); //initialize the lcd
+  lcd.backlight(); //open the backlight 
+  HT.begin();
+  delay(setTime);
+  tSensor = digitalRead(tSensor);
+  pinMode(fanPin,OUTPUT);
+  pinMode(tSensor,INPUT);
+  pinMode(pump1,OUTPUT);
+  pinMode(mSensor0,INPUT);
+  pinMode(mSensor1,INPUT);
+  Serial.begin(9600);
+  Serial.println("Reading from Sensor");
+  delay(2000);
+  
+}
+
+void loop(){
+
+  humidity=HT.readHumidity();
+  tempF=HT.readTemperature(true);
+
+  rawH0 = analogRead(mSensor0);
+  percentage0 = map(rawH0,1024,16,0,100);
+  rawH1 = analogRead(mSensor1);
+  percentage1 = map(rawH1,1024,33,0,100);
+
+  fanPWM = map(tempF,71,76,25,255);
+  digitalWrite(fanPin,fanPWM);
+
+  lcd.setCursor(0,0);
+  lcd.print("Temp ");
+  lcd.print(tempF);
+  lcd.print(" Hum ");
+  lcd.print(humidity);
+  lcd.setCursor(0,1);
+   lcd.print("SM0 ");
+  lcd.print(percentage0);
+  lcd.print(" SM1 ");
+  lcd.print(percentage1);
+  
+   Serial.print ("Box Temp ");
+   Serial.print(tempF);
+   Serial.print("F ");
+   Serial.print("Box Humidity ");
+   Serial.print(humidity);
+   Serial.println("%");
+   Serial.print("SM0 ");
+//   Serial.print(rawH0);
+   Serial.print (percentage0);
+   Serial.println ("%");
+    Serial.print("SM1 ");
+//    Serial.print(rawH1);
+   Serial.print (percentage1);
+   Serial.println ("%");
+  if(percentage0>15){
+    digitalWrite(pump1,HIGH);
+  }
+  else{
+    digitalWrite(pump1,LOW);
+  }
+  delay (10000);
+  lcd.clear();
+}
